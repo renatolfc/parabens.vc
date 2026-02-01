@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  parabens:
+    image: parabens-vc:arm64
+    ports:
+      - "8080:8080"
+    environment:
+      SHORTLINK_DB: /app/data/shortlinks.sqlite
+      PUBLIC_BASE_URL: https://parabens.vc
+    volumes:
+      - /home/renatoc/parabens-vc/data:/app/data
+    restart: unless-stopped
