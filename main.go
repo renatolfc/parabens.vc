@@ -32,7 +32,7 @@ const (
 	trackRateWindow       = time.Minute
 	ogImageWidth          = 600
 	ogImageHeight         = 315
-	ogImageTextLimit      = 48
+	ogImageTextLimit      = 39
 	ogRenderTimeout       = 5 * time.Second
 	siteDomain            = "parabens.vc"
 )
