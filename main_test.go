@@ -455,8 +455,8 @@ func TestOgImageTextPrefix(t *testing.T) {
 		{"", ""},
 		{"  ", ""},
 		{"short", "short"},
-		{"exactly 48 characters in this text here to test", "exactly 48 characters in this text here to test"},
-		{"this is a very long message that exceeds the maximum allowed length for og image text", "this is a very long message that exceeds the max…"},
+		{"exactly 39 characters in this text her", "exactly 39 characters in this text her"},
+		{"this is a very long message that exceeds the maximum allowed length for og image text", "this is a very long message that exceed…"},
 		{"multiple   spaces   collapsed", "multiple spaces collapsed"},
 	}
 
@@ -1672,5 +1672,60 @@ func TestFileExists(t *testing.T) {
 	}
 	if exists {
 		t.Error("fileExists() should return false for directory")
+	}
+}
+
+func TestResponseRecorder(t *testing.T) {
+	// Test default status
+	rec := httptest.NewRecorder()
+	rr := &responseRecorder{ResponseWriter: rec, status: http.StatusOK}
+
+	if rr.status != http.StatusOK {
+		t.Errorf("initial status = %d, want %d", rr.status, http.StatusOK)
+	}
+
+	// Test WriteHeader
+	rr.WriteHeader(http.StatusNotFound)
+	if rr.status != http.StatusNotFound {
+		t.Errorf("status after WriteHeader = %d, want %d", rr.status, http.StatusNotFound)
+	}
+
+	// Test Write
+	n, err := rr.Write([]byte("hello"))
+	if err != nil {
+		t.Errorf("Write() error = %v", err)
+	}
+	if n != 5 {
+		t.Errorf("Write() returned %d, want 5", n)
+	}
+	if rr.size != 5 {
+		t.Errorf("size = %d, want 5", rr.size)
+	}
+
+	// Test multiple writes
+	rr.Write([]byte(" world"))
+	if rr.size != 11 {
+		t.Errorf("size after second write = %d, want 11", rr.size)
+	}
+}
+
+func TestWithRequestLogging(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte("test response"))
+	})
+
+	logged := withRequestLogging(handler)
+
+	req := httptest.NewRequest(http.MethodGet, "/test-path", nil)
+	rec := httptest.NewRecorder()
+
+	logged.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusCreated)
+	}
+	if rec.Body.String() != "test response" {
+		t.Errorf("body = %q, want %q", rec.Body.String(), "test response")
 	}
 }

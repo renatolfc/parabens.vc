@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"math/rand"
 	"net"
 	"net/http"
@@ -103,6 +103,8 @@ type ogImageQueue struct {
 }
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -117,7 +119,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           withSecurityHeaders(mux),
+		Handler:           withRequestLogging(withSecurityHeaders(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -125,9 +127,9 @@ func main() {
 		MaxHeaderBytes:    1 << 20,
 	}
 
-	log.Printf("Listening on http://0.0.0.0:%s", port)
+	slog.Info("server starting", "addr", "0.0.0.0:"+port)
 	if err := srv.ListenAndServe(); err != nil {
-		log.Printf("server error: %v", err)
+		slog.Error("server error", "error", err)
 	}
 }
 
@@ -153,7 +155,19 @@ func handleTrack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ip := clientIP(r)
-	log.Printf("track_event: %+v meta={ip:%q ua:%q ref:%q lang:%q}", evt, ip, r.UserAgent(), r.Referer(), r.Header.Get("Accept-Language"))
+	slog.Info("track_event",
+		"event", evt.Event,
+		"path", evt.Path,
+		"query", evt.Query,
+		"referrer", evt.Referrer,
+		"timezone", evt.Timezone,
+		"screen", evt.Screen,
+		"viewport", evt.Viewport,
+		"ip", ip,
+		"user_agent", r.UserAgent(),
+		"referer", r.Referer(),
+		"accept_language", r.Header.Get("Accept-Language"),
+	)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -346,7 +360,7 @@ func handleOgImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := ogQueue.render(key, text); err != nil {
-		log.Printf("og-image render failed: %v", err)
+		slog.Error("og-image render failed", "error", err)
 		serveEmbedded(w, r, "public/og-image.png", "image/png", "public, max-age=86400")
 		return
 	}
@@ -644,6 +658,40 @@ func withSecurityHeaders(next http.Handler) http.Handler {
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+type responseRecorder struct {
+	http.ResponseWriter
+	status int
+	size   int
+}
+
+func (rr *responseRecorder) WriteHeader(code int) {
+	rr.status = code
+	rr.ResponseWriter.WriteHeader(code)
+}
+
+func (rr *responseRecorder) Write(b []byte) (int, error) {
+	n, err := rr.ResponseWriter.Write(b)
+	rr.size += n
+	return n, err
+}
+
+func withRequestLogging(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rr := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rr, r)
+		slog.Info("request",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"status", rr.status,
+			"size", rr.size,
+			"duration_ms", time.Since(start).Milliseconds(),
+			"ip", clientIP(r),
+			"user_agent", r.UserAgent(),
+		)
 	})
 }
 
