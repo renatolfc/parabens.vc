@@ -10,8 +10,10 @@ COPY main.go main_test.go ./
 COPY public ./public
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o parabens-vc .
 
-FROM alpine:latest
-RUN adduser -D -u 1000 appuser
+FROM archlinux:base
+RUN pacman -Syu --noconfirm --needed ca-certificates librsvg ttf-opensans noto-fonts-emoji \
+    && pacman -Scc --noconfirm
+RUN useradd -m -u 1000 appuser
 WORKDIR /app
 COPY --from=builder /app/parabens-vc /usr/local/bin/parabens-vc
 EXPOSE 8080

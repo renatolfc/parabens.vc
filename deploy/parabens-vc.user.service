@@ -1,0 +1,19 @@
+[Unit]
+Description=parabens.vc web service (user)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/parabens.vc
+EnvironmentFile=%h/parabens.vc/.env
+ExecStart=%h/parabens.vc/parabens-vc
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=%h/parabens.vc %h/.cache/parabens.vc
+
+[Install]
+WantedBy=default.target

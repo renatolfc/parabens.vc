@@ -53,6 +53,7 @@ Environment variables:
 ### Short Links
 
 **Create a short link:**
+
 ```bash
 POST /s
 Content-Type: application/json
@@ -61,6 +62,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
   "code": "abc1234",
@@ -71,12 +73,15 @@ Response:
 ```
 
 **Resolve a short link:**
+
 ```
 GET /s/{code}
 ```
+
 Redirects to the original path.
 
 **Rate limits:**
+
 - Short link creation: 20 requests/minute per IP
 - Analytics tracking: 120 requests/minute per IP
 
@@ -102,16 +107,110 @@ go test -v ./...
 ## Deployment
 
 GitHub Actions automatically builds:
+
 - Multi-platform binaries (Linux arm64/amd64)
 - Docker images pushed to GitHub Container Registry
 
 Pull the latest image:
+
 ```bash
 docker pull ghcr.io/renatolfc/parabens.vc:main
+```
+
+## systemd (Arch)
+
+1) Create user and directories:
+
+```bash
+sudo useradd --system --home /opt/parabens.vc --shell /usr/bin/nologin parabens
+sudo install -d -o parabens -g parabens /opt/parabens.vc
+sudo install -d -o parabens -g parabens /var/cache/parabens.vc
+```
+
+1) Install the binary:
+
+```bash
+sudo install -m 0755 ./parabens-vc /usr/local/bin/parabens-vc
+```
+
+1) Create environment file at /etc/parabens-vc.env:
+
+```bash
+PORT=8080
+PUBLIC_BASE_URL=https://parabens.vc
+SHORTLINK_DB=/opt/parabens.vc/data/shortlinks.json
+XDG_CACHE_DIR=/var/cache
+```
+
+1) Install the service file:
+
+```bash
+sudo install -m 0644 deploy/parabens-vc.service /etc/systemd/system/parabens-vc.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now parabens-vc
+```
+
+### Log persistence (journald)
+
+Enable persistent journald storage (Arch defaults to volatile):
+
+```bash
+sudo mkdir -p /var/log/journal
+sudo systemctl restart systemd-journald
+```
+
+View logs:
+
+```bash
+journalctl -u parabens-vc -f
+```
+
+## systemd --user (start at login)
+
+1) Prepare directories in your home folder:
+
+```bash
+install -d ~/parabens.vc ~/parabens.vc/data ~/.cache/parabens.vc
+```
+
+1) Place the binary in your home folder:
+
+```bash
+install -m 0755 ./parabens-vc ~/parabens.vc/parabens-vc
+```
+
+1) Create env file at ~/parabens.vc/.env:
+
+```bash
+PORT=8080
+PUBLIC_BASE_URL=https://parabens.vc
+SHORTLINK_DB=%h/parabens.vc/data/shortlinks.json
+XDG_CACHE_DIR=%h/.cache
+```
+
+1) Install and enable the user service:
+
+```bash
+install -m 0644 deploy/parabens-vc.user.service ~/.config/systemd/user/parabens-vc.service
+systemctl --user daemon-reload
+systemctl --user enable --now parabens-vc
+```
+
+Optional: keep the service running after logout:
+
+```bash
+loginctl enable-linger $USER
+```
+
+Logs:
+
+```bash
+journalctl --user -u parabens-vc -f
 ```
 
 ## Notes
 
 - Paths are URL-decoded and underscores are converted to spaces
-- Dynamic OG images require `rsvg-convert` (install `librsvg2-bin` on Debian/Ubuntu)
+- Dynamic OG images require `rsvg-convert` and fonts. On Arch:
+  - `pacman -S --needed librsvg ttf-opensans noto-fonts-emoji`
 - Privacy policy available at `/privacy`

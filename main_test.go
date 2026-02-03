@@ -423,11 +423,11 @@ func TestIsBlockedMessage(t *testing.T) {
 		blocked bool
 	}{
 		{"clean message", false},
-		{"this has bad word in it", true},    // Contains "bad word" with space
-		{"this is offensive content", true},  // Contains "offensive"
-		{"BAD WORD", true},                   // Case insensitive
-		{"bad_word", true},                   // Underscore normalized to space
-		{"bad-word", true},                   // Hyphen normalized to space
+		{"this has bad word in it", true},   // Contains "bad word" with space
+		{"this is offensive content", true}, // Contains "offensive"
+		{"BAD WORD", true},                  // Case insensitive
+		{"bad_word", true},                  // Underscore normalized to space
+		{"bad-word", true},                  // Hyphen normalized to space
 		{"", false},
 		{"unrelated text", false},
 		{"badword", false}, // No space, so doesn't match "bad word"
@@ -643,11 +643,11 @@ func TestShortlinkResponse(t *testing.T) {
 
 func TestClientIP(t *testing.T) {
 	tests := []struct {
-		name           string
-		remoteAddr     string
-		xForwardedFor  string
-		xRealIP        string
-		expectedIP     string
+		name          string
+		remoteAddr    string
+		xForwardedFor string
+		xRealIP       string
+		expectedIP    string
 	}{
 		{
 			name:       "from RemoteAddr",
@@ -655,10 +655,10 @@ func TestClientIP(t *testing.T) {
 			expectedIP: "192.168.1.1",
 		},
 		{
-			name:          "from X-Real-IP",
-			remoteAddr:    "192.168.1.1:12345",
-			xRealIP:       "10.0.0.1",
-			expectedIP:    "10.0.0.1",
+			name:       "from X-Real-IP",
+			remoteAddr: "192.168.1.1:12345",
+			xRealIP:    "10.0.0.1",
+			expectedIP: "10.0.0.1",
 		},
 		{
 			name:          "from X-Forwarded-For single",
@@ -1024,8 +1024,8 @@ func TestSecurityHeaders(t *testing.T) {
 	handler.ServeHTTP(w, req)
 
 	headers := map[string]string{
-		"X-Content-Type-Options": "nosniff",
-		"Referrer-Policy":        "no-referrer",
+		"X-Content-Type-Options":  "nosniff",
+		"Referrer-Policy":         "no-referrer",
 		"Content-Security-Policy": "default-src 'self'",
 	}
 
@@ -1115,11 +1115,11 @@ func TestRenderIndexHTMLComprehensive(t *testing.T) {
 	template := "__TITLE__ | __OG_TITLE__ | __OG_DESC__ | __NAME__ | __PUNCT__ | __OG_URL__ | __OG_IMAGE__"
 
 	tests := []struct {
-		name          string
-		path          string
-		checkTitle    bool
-		checkPunct    bool
-		checkName     bool
+		name       string
+		path       string
+		checkTitle bool
+		checkPunct bool
+		checkName  bool
 	}{
 		{"empty path", "", true, true, true},
 		{"simple name", "/Renato", true, true, true},
