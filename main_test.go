@@ -443,6 +443,70 @@ func TestIsBlockedMessage(t *testing.T) {
 	}
 }
 
+func TestLooksLikePath(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		// Should be blocked (looks like exploit attempts)
+		{"wp-login.php", true},
+		{"wp-admin/index.php", true},
+		{"wp-content/uploads", true},
+		{"wordpress/readme.html", true},
+		{"../etc/passwd", true},
+		{"..\\windows\\system32", true},
+		{"xmlrpc.php", true},
+		{"phpmyadmin/index.php", true},
+		{".env", true},
+		{".git/config", true},
+		{"admin.php", true},
+		{"admin/dashboard", true},
+		{"backup.sql", true},
+		{"config.yml", true},
+		{"database.json", true},
+		{"http://evil.com/", true},
+		{"https://attacker.net/payload", true},
+		{"ftp://files.example.com", true},
+		{"cgi-bin/script.cgi", true},
+		{".htaccess", true},
+		{"shell.sh", true},
+		{"exploit.exe", true},
+		{"api/users", true},
+		{"etc/passwd", true},
+
+		// Should NOT be blocked (legitimate names)
+		{"João", false},
+		{"Maria Silva", false},
+		{"J.R. Tolkien", false},
+		{"João Paulo", false},
+		{"Dr. Smith", false},
+		{"Ana Maria", false},
+		{"José", false},
+		{"Müller", false},
+		{"François", false},
+		{"", false},
+		{"admin", false},
+		{"Administração", false},
+		{"wordpress", false},
+		{"wp-admin", false}, // No slash, allowed
+		{"I love wordpress", false},
+		{"A / B / C", false},
+		{"I love wordpress / drupal", false},
+		{"my api key", false},
+		{"the admin panel", false},
+		{"/admin/dashboard", false}, // Starts with /, message won't have leading /
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := looksLikePath(tt.input)
+			if got != tt.expected {
+				t.Errorf("looksLikePath(%q) = %v, want %v", tt.input, got, tt.expected)
+			}
+		})
+	}
+}
+
 // ============================================================================
 // OG Image Tests
 // ============================================================================

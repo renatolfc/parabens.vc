@@ -195,6 +195,10 @@ func handlePage(w http.ResponseWriter, r *http.Request) {
 func serveIndex(w http.ResponseWriter, r *http.Request, path string) {
 	tpl, _ := embeddedFiles.ReadFile("public/index.html")
 	message := decodePath(strings.TrimPrefix(path, "/"))
+	if looksLikePath(message) {
+		http.Error(w, "", http.StatusNotFound)
+		return
+	}
 	if isBlockedMessage(message) {
 		writeHTML(w, http.StatusForbidden, errorPage("Esta mensagem não está disponível."))
 		return
@@ -226,7 +230,7 @@ func handleOgImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	text := ogImageTextPrefix(r.URL.Query().Get("text"))
-	if text == "" || isBlockedMessage(text) {
+	if text == "" || looksLikePath(text) || isBlockedMessage(text) {
 		serveEmbedded(w, r, "public/og-image.png", "image/png", "public, max-age=86400")
 		return
 	}

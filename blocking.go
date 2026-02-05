@@ -70,3 +70,54 @@ func normalizeForBlock(value string) string {
 	}, value)
 	return strings.Join(strings.Fields(value), " ")
 }
+
+// Suspicious file extensions commonly used in exploit attempts
+var suspiciousExtensions = []string{
+	".php", ".asp", ".aspx", ".jsp", ".cgi", ".sql", ".bak",
+	".env", ".xml", ".json", ".yml", ".yaml", ".ini",
+	".conf", ".htaccess", ".htpasswd", ".log", ".tar", ".gz",
+	".zip", ".rar", ".exe", ".sh", ".bat", ".ps1",
+}
+
+// Path prefixes commonly used in CMS exploit attempts (must include separator)
+var suspiciousPathPrefixes = []string{
+	"wp-admin/", "wp-admin\\", "wp-content/", "wp-content\\", "wp-includes/", "wp-includes\\",
+	"wordpress/", "wordpress\\", "xmlrpc", "phpmyadmin/", "phpmyadmin\\",
+	"cgi-bin/", "cgi-bin\\", "admin/", "admin\\", ".well-known/", ".well-known\\",
+	"api/", "api\\", ".git/", ".git\\", "etc/passwd", "etc/shadow", "etc\\passwd", "etc\\shadow",
+}
+
+// looksLikePath returns true if the input looks like a file path or URL
+// rather than a person's name. Used to reject bot exploit attempts early.
+func looksLikePath(path string) bool {
+	if path == "" {
+		return false
+	}
+	lower := strings.ToLower(path)
+
+	// Check for directory traversal
+	if strings.Contains(lower, "../") || strings.Contains(lower, "..\\") {
+		return true
+	}
+
+	// Check for URL schemes
+	if strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") || strings.HasPrefix(lower, "ftp://") {
+		return true
+	}
+
+	// Check for suspicious file extensions
+	for _, ext := range suspiciousExtensions {
+		if strings.HasSuffix(lower, ext) {
+			return true
+		}
+	}
+
+	// Check for suspicious path prefixes
+	for _, prefix := range suspiciousPathPrefixes {
+		if strings.HasPrefix(lower, prefix) {
+			return true
+		}
+	}
+
+	return false
+}

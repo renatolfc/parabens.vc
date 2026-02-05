@@ -40,14 +40,20 @@ func withRequestLogging(next http.Handler) http.Handler {
 		start := time.Now()
 		rr := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(rr, r)
-		slog.Info("request",
+		attrs := []any{
 			"method", r.Method,
 			"path", r.URL.Path,
+		}
+		if r.URL.RawQuery != "" {
+			attrs = append(attrs, "query", r.URL.RawQuery)
+		}
+		attrs = append(attrs,
 			"status", rr.status,
 			"size", rr.size,
 			"duration_ms", time.Since(start).Milliseconds(),
 			"ip", clientIP(r),
 			"user_agent", r.UserAgent(),
 		)
+		slog.Info("request", attrs...)
 	})
 }
