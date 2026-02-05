@@ -5,7 +5,7 @@ All static assets are embedded in the Go binary for single-file deployment.
 
 ## Features
 
-- 🎉 Personalized congratulations pages at `/{name}`
+- 🎉 Personalized congratulations pages at `/{message}`
 - 🔗 Short link creation and management
 - 📊 Privacy-focused analytics (logged to stdout)
 - 🖼️ Dynamic OpenGraph images with custom text
@@ -27,7 +27,7 @@ go build -o parabens-vc .
 ./parabens-vc
 ```
 
-Visit `http://localhost:8080/SeuNome` to see a personalized page.
+Visit `http://localhost:8080/você_é_demais!` to see a personalized congratulations page.
 
 ### Docker
 

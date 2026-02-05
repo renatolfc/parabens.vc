@@ -166,7 +166,7 @@ func fileExists(path string) (bool, error) {
 func renderIndexHTML(tpl string, path string) string {
 	raw := strings.TrimPrefix(path, "/")
 	message := decodePath(raw)
-	name := buildDisplayName(message)
+	displayMessage := buildDisplayMessage(message)
 	punct := "!"
 	if hasFinalPunctuation(message) || hasEncodedFinalPunctuation(raw) {
 		punct = ""
@@ -188,12 +188,12 @@ func renderIndexHTML(tpl string, path string) string {
 		"__OG_DESC__", escapeHTML(message),
 		"__OG_URL__", escapeHTML(ogURL),
 		"__OG_IMAGE__", escapeHTML(ogImage),
-		"__NAME__", escapeHTML(name),
+		"__MESSAGE__", escapeHTML(displayMessage),
 		"__PUNCT__", punct,
 	).Replace(tpl)
 }
 
-func buildDisplayName(value string) string {
+func buildDisplayMessage(value string) string {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return "você é um(a) amigo(a)"

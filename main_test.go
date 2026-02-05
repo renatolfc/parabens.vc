@@ -203,7 +203,7 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 // Display Name Logic Tests
 // ============================================================================
 
-func TestBuildDisplayName(t *testing.T) {
+func TestBuildDisplayMessage(t *testing.T) {
 	tests := []struct {
 		input string
 		want  string
@@ -228,9 +228,9 @@ func TestBuildDisplayName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			got := buildDisplayName(tt.input)
+			got := buildDisplayMessage(tt.input)
 			if got != tt.want {
-				t.Errorf("buildDisplayName(%q) = %q, want %q", tt.input, got, tt.want)
+				t.Errorf("buildDisplayMessage(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
 	}
@@ -1176,7 +1176,7 @@ func TestReadLimitedBody(t *testing.T) {
 // ============================================================================
 
 func TestRenderIndexHTMLComprehensive(t *testing.T) {
-	template := "__TITLE__ | __OG_TITLE__ | __OG_DESC__ | __NAME__ | __PUNCT__ | __OG_URL__ | __OG_IMAGE__"
+	template := "__TITLE__ | __OG_TITLE__ | __OG_DESC__ | __MESSAGE__ | __PUNCT__ | __OG_URL__ | __OG_IMAGE__"
 
 	tests := []struct {
 		name       string
