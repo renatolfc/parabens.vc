@@ -29,7 +29,7 @@ func TestRenderIndexHTMLPunctuation(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := renderIndexHTML(tpl, tc.path)
+			got := renderIndexHTML(tpl, tc.path, "")
 			if got != tc.want {
 				t.Fatalf("expected %q, got %q", tc.want, got)
 			}
@@ -1176,7 +1176,7 @@ func TestReadLimitedBody(t *testing.T) {
 // ============================================================================
 
 func TestRenderIndexHTMLComprehensive(t *testing.T) {
-	template := "__TITLE__ | __OG_TITLE__ | __OG_DESC__ | __MESSAGE__ | __PUNCT__ | __OG_URL__ | __OG_IMAGE__"
+	template := "__TITLE__ | __OG_TITLE__ | __OG_DESC__ | __MESSAGE__ | __PUNCT__ | __OG_URL__ | __OG_IMAGE__ | __GREETING__ | __SUBTITLE__ | __THEME_CLASS__"
 
 	tests := []struct {
 		name       string
@@ -1197,12 +1197,68 @@ func TestRenderIndexHTMLComprehensive(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := renderIndexHTML(template, tt.path)
+			result := renderIndexHTML(template, tt.path, "")
 			if result == template {
 				t.Error("template was not modified")
 			}
 			if strings.Contains(result, "__") {
 				t.Error("template placeholders not replaced")
+			}
+		})
+	}
+}
+
+func TestThemeClass(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"", ""},
+		{"light", "theme-light"},
+		{"LIGHT", "theme-light"},
+		{"warm", "theme-warm"},
+		{"elegant", "theme-elegant"},
+		{"pixel", "theme-pixel"},
+		{"invalid", ""},
+		{"<script>", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := themeClass(tt.input)
+			if got != tt.want {
+				t.Errorf("themeClass(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseOccasionFromPath(t *testing.T) {
+	tests := []struct {
+		path        string
+		wantGreet   string
+		wantMessage string
+	}{
+		{"/", "Parabéns", ""},
+		{"/João", "Parabéns", "João"},
+		{"/aniversario/João", "Feliz Aniversário", "João"},
+		{"/ANIVERSARIO/Maria", "Feliz Aniversário", "Maria"},
+		{"/formatura/Ana", "Parabéns pela formatura", "Ana"},
+		{"/casamento/Pedro_e_Ana", "Felicidades", "Pedro_e_Ana"},
+		{"/boas-vindas/Novo_Membro", "Boas-vindas", "Novo_Membro"},
+		{"/promocao/Carlos", "Parabéns pela promoção", "Carlos"},
+		{"/unknown/Test", "Parabéns", "unknown/Test"},
+		{"/aniversario/", "Feliz Aniversário", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			occ, msg := parseOccasionFromPath(tt.path)
+			if occ.Greeting != tt.wantGreet {
+				t.Errorf("parseOccasionFromPath(%q) greeting = %q, want %q", tt.path, occ.Greeting, tt.wantGreet)
+			}
+			if msg != tt.wantMessage {
+				t.Errorf("parseOccasionFromPath(%q) message = %q, want %q", tt.path, msg, tt.wantMessage)
 			}
 		})
 	}

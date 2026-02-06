@@ -75,20 +75,31 @@ func handleShortlinkCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rawPath := strings.TrimPrefix(strings.TrimSpace(req.Path), "/")
-	path := decodePath(rawPath)
-	if path == "" {
+	// Store the full path (with occasion prefix and query string)
+	fullPath := strings.TrimSpace(req.Path)
+	if !strings.HasPrefix(fullPath, "/") {
+		fullPath = "/" + fullPath
+	}
+
+	// Extract just the message for blocking check
+	pathOnly := fullPath
+	if idx := strings.Index(pathOnly, "?"); idx != -1 {
+		pathOnly = pathOnly[:idx]
+	}
+	_, rawMessage := parseOccasionFromPath(pathOnly)
+	message := decodePath(rawMessage)
+	if message == "" {
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	if isBlockedMessage(path) {
+	if isBlockedMessage(message) {
 		http.Error(w, "", http.StatusForbidden)
 		return
 	}
 
 	shortlinks.mu.Lock()
-	if code, ok := shortlinks.byPath[path]; ok {
-		resp := shortlinkResponse(code, path)
+	if code, ok := shortlinks.byPath[fullPath]; ok {
+		resp := shortlinkResponse(code, fullPath)
 		shortlinks.mu.Unlock()
 		writeJSON(w, http.StatusOK, resp)
 		return
@@ -107,16 +118,16 @@ func handleShortlinkCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortlinks.byCode[code] = path
-	shortlinks.byPath[path] = code
+	shortlinks.byCode[code] = fullPath
+	shortlinks.byPath[fullPath] = code
 	if err := persistShortlinksLocked(); err != nil {
 		delete(shortlinks.byCode, code)
-		delete(shortlinks.byPath, path)
+		delete(shortlinks.byPath, fullPath)
 		shortlinks.mu.Unlock()
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
-	resp := shortlinkResponse(code, path)
+	resp := shortlinkResponse(code, fullPath)
 	shortlinks.mu.Unlock()
 	writeJSON(w, http.StatusCreated, resp)
 }
@@ -145,12 +156,22 @@ func handleShortlinkRedirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encoded := encodePathSegment(path)
-	if encoded == "" {
-		http.Error(w, "", http.StatusNotFound)
-		return
+	// New format: path starts with "/" (includes occasion/query)
+	// Old format: just the message (e.g., "João")
+	var redirectURL string
+	if strings.HasPrefix(path, "/") {
+		redirectURL = path
+	} else {
+		// Backwards compatibility: encode old-style message
+		encoded := encodePathSegment(path)
+		if encoded == "" {
+			http.Error(w, "", http.StatusNotFound)
+			return
+		}
+		redirectURL = "/" + encoded
 	}
-	http.Redirect(w, r, "/"+encoded, http.StatusFound)
+
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
 func handlePage(w http.ResponseWriter, r *http.Request) {
@@ -194,7 +215,8 @@ func handlePage(w http.ResponseWriter, r *http.Request) {
 
 func serveIndex(w http.ResponseWriter, r *http.Request, path string) {
 	tpl, _ := embeddedFiles.ReadFile("public/index.html")
-	message := decodePath(strings.TrimPrefix(path, "/"))
+	_, rawMessage := parseOccasionFromPath(path)
+	message := decodePath(rawMessage)
 	if looksLikePath(message) {
 		http.Error(w, "", http.StatusNotFound)
 		return
@@ -203,7 +225,8 @@ func serveIndex(w http.ResponseWriter, r *http.Request, path string) {
 		writeHTML(w, http.StatusForbidden, errorPage("Esta mensagem não está disponível."))
 		return
 	}
-	rendered := renderIndexHTML(string(tpl), path)
+	theme := r.URL.Query().Get("theme")
+	rendered := renderIndexHTML(string(tpl), path, theme)
 	writeHTML(w, http.StatusOK, rendered)
 }
 

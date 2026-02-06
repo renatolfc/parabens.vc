@@ -29,11 +29,22 @@ var shortlinkLimiter = &rateLimiter{
 }
 
 func shortlinkResponse(code, path string) ShortLinkResponse {
-	cleanPath := strings.TrimPrefix(strings.TrimSpace(path), "/")
 	base := strings.TrimRight(publicBaseURL(), "/")
 	shortURL := base + "/s/" + code
-	destPath := encodePathSegment(cleanPath)
-	destination := base + "/" + destPath
+
+	// New format: path starts with "/" (full path with occasion/query)
+	// Old format: just the message
+	var destination string
+	var cleanPath string
+	if strings.HasPrefix(path, "/") {
+		destination = base + path
+		cleanPath = strings.TrimPrefix(path, "/")
+	} else {
+		cleanPath = strings.TrimPrefix(strings.TrimSpace(path), "/")
+		destPath := encodePathSegment(cleanPath)
+		destination = base + "/" + destPath
+	}
+
 	return ShortLinkResponse{
 		Code:        code,
 		ShortURL:    shortURL,

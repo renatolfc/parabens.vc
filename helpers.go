@@ -163,24 +163,131 @@ func fileExists(path string) (bool, error) {
 	return !info.IsDir(), nil
 }
 
-func renderIndexHTML(tpl string, path string) string {
-	raw := strings.TrimPrefix(path, "/")
-	message := decodePath(raw)
+// Valid theme names
+var validThemes = map[string]bool{
+	"":        true, // default
+	"light":   true,
+	"warm":    true,
+	"elegant": true,
+	"pixel":   true,
+}
+
+func themeClass(theme string) string {
+	theme = strings.ToLower(strings.TrimSpace(theme))
+	if !validThemes[theme] || theme == "" {
+		return ""
+	}
+	return "theme-" + theme
+}
+
+// Occasion defines a celebration type with its display properties
+type Occasion struct {
+	Prefix   string // URL prefix (e.g., "aniversario")
+	Greeting string // Greeting text (e.g., "Feliz Aniversário")
+	Subtitle string // Subtitle text
+	Emoji    string // Emoji for subtitle
+}
+
+var defaultOccasion = Occasion{
+	Prefix:   "",
+	Greeting: "Parabéns",
+	Subtitle: "Celebrando com balões e confetes",
+	Emoji:    "🎉",
+}
+
+var occasions = map[string]Occasion{
+	"aniversario": {
+		Prefix:   "aniversario",
+		Greeting: "Feliz Aniversário",
+		Subtitle: "Celebrando mais um ano de vida",
+		Emoji:    "🎂",
+	},
+	"formatura": {
+		Prefix:   "formatura",
+		Greeting: "Parabéns pela formatura",
+		Subtitle: "Uma conquista para celebrar",
+		Emoji:    "🎓",
+	},
+	"promocao": {
+		Prefix:   "promocao",
+		Greeting: "Parabéns pela promoção",
+		Subtitle: "Seu esforço foi reconhecido",
+		Emoji:    "🏆",
+	},
+	"casamento": {
+		Prefix:   "casamento",
+		Greeting: "Felicidades",
+		Subtitle: "Celebrando o amor",
+		Emoji:    "💒",
+	},
+	"boas-vindas": {
+		Prefix:   "boas-vindas",
+		Greeting: "Boas-vindas",
+		Subtitle: "É um prazer ter você aqui",
+		Emoji:    "👋",
+	},
+}
+
+// parseOccasionFromPath extracts occasion prefix and remaining message from path
+// e.g., "/aniversario/João" → (Occasion{...}, "João")
+// e.g., "/João" → (defaultOccasion, "João")
+func parseOccasionFromPath(path string) (Occasion, string) {
+	path = strings.TrimPrefix(path, "/")
+	if path == "" {
+		return defaultOccasion, ""
+	}
+
+	// Check if path starts with a known occasion prefix
+	parts := strings.SplitN(path, "/", 2)
+	if len(parts) >= 1 {
+		if occ, ok := occasions[strings.ToLower(parts[0])]; ok {
+			message := ""
+			if len(parts) == 2 {
+				message = parts[1]
+			}
+			return occ, message
+		}
+	}
+
+	return defaultOccasion, path
+}
+
+func renderIndexHTML(tpl string, path string, theme string) string {
+	occasion, rawMessage := parseOccasionFromPath(path)
+	message := decodePath(rawMessage)
 	displayMessage := buildDisplayMessage(message)
 	punct := "!"
-	if hasFinalPunctuation(message) || hasEncodedFinalPunctuation(raw) {
+	if hasFinalPunctuation(message) || hasEncodedFinalPunctuation(rawMessage) {
 		punct = ""
 	}
-	title := "Parabéns!"
+
+	// Build title using occasion greeting
+	title := occasion.Greeting + "!"
 	if message != "" {
-		title = fmt.Sprintf("Parabéns, %s%s", message, punct)
+		title = fmt.Sprintf("%s, %s%s", occasion.Greeting, message, punct)
 	}
+
+	// Build OG URL
 	baseURL := publicBaseURL()
 	ogURL := baseURL
-	if raw != "" {
-		ogURL = strings.TrimRight(baseURL, "/") + "/" + raw
+	if path != "" && path != "/" {
+		ogURL = strings.TrimRight(baseURL, "/") + path
 	}
-	ogImage := ogImageURL(baseURL, message)
+
+	// OG image uses the occasion greeting + message
+	ogImageText := message
+	if message != "" && occasion.Greeting != "Parabéns" {
+		ogImageText = occasion.Greeting + ", " + message
+	}
+	ogImage := ogImageURL(baseURL, ogImageText)
+
+	subtitle := occasion.Subtitle + " " + occasion.Emoji
+
+	// Determine if we should show the composer form
+	showComposer := "false"
+	if message == "" {
+		showComposer = "true"
+	}
 
 	return strings.NewReplacer(
 		"__TITLE__", escapeHTML(title),
@@ -188,8 +295,12 @@ func renderIndexHTML(tpl string, path string) string {
 		"__OG_DESC__", escapeHTML(message),
 		"__OG_URL__", escapeHTML(ogURL),
 		"__OG_IMAGE__", escapeHTML(ogImage),
+		"__GREETING__", escapeHTML(occasion.Greeting),
 		"__MESSAGE__", escapeHTML(displayMessage),
 		"__PUNCT__", punct,
+		"__SUBTITLE__", escapeHTML(subtitle),
+		"__THEME_CLASS__", themeClass(theme),
+		"__SHOW_COMPOSER__", showComposer,
 	).Replace(tpl)
 }
 

@@ -1,10 +1,61 @@
 const balloonsEl = document.getElementById("balloons");
 const confettiCanvas = document.getElementById("confetti");
+const composerForm = document.getElementById("composer-form");
 
 const url = new URL(window.location.href);
 const queryParams = Object.fromEntries(url.searchParams.entries());
 
 const balloonColors = ["#fbbf24", "#60a5fa", "#f472b6", "#34d399", "#f97316"];
+
+// Composer form handling
+if (composerForm) {
+    composerForm.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        
+        const occasion = document.getElementById("occasion-select").value;
+        const message = document.getElementById("message-input").value.trim();
+        const theme = document.getElementById("theme-select").value;
+        const button = composerForm.querySelector("button");
+        
+        if (!message) {
+            document.getElementById("message-input").focus();
+            return;
+        }
+        
+        // Build the full path
+        const encodedMessage = message.replace(/ /g, "_");
+        let path = "/" + encodedMessage;
+        if (occasion) {
+            path = "/" + occasion + "/" + encodedMessage;
+        }
+        if (theme) {
+            path += "?theme=" + theme;
+        }
+        
+        // Create shortlink
+        button.disabled = true;
+        button.textContent = "Criando...";
+        
+        try {
+            const response = await fetch("/s", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ path: path })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                window.location.href = data.short_url;
+            } else {
+                // Fallback to direct URL on error
+                window.location.href = path;
+            }
+        } catch {
+            // Fallback to direct URL on error
+            window.location.href = path;
+        }
+    });
+}
 
 function createBalloons() {
     const total = 12;

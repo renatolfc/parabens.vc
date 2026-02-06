@@ -21,11 +21,44 @@
     <link rel="stylesheet" href="/styles.css" />
 </head>
 
-<body>
+<body class="__THEME_CLASS__" data-show-composer="__SHOW_COMPOSER__">
     <div class="background"></div>
     <main class="container">
-        <h1 class="title">Parabéns, <span id="message">__MESSAGE__</span></h1>
-        <p class="subtitle">Celebrando com balões e confetes 🎉</p>
+        <div class="composer" id="composer">
+            <h1 class="composer-title">Crie sua mensagem de parabéns</h1>
+            <form id="composer-form" class="composer-form">
+                <div class="form-group">
+                    <label for="occasion-select">Ocasião</label>
+                    <select id="occasion-select" name="occasion">
+                        <option value="">Parabéns (geral)</option>
+                        <option value="aniversario">🎂 Aniversário</option>
+                        <option value="formatura">🎓 Formatura</option>
+                        <option value="promocao">🏆 Promoção</option>
+                        <option value="casamento">💒 Casamento</option>
+                        <option value="boas-vindas">👋 Boas-vindas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="message-input">Mensagem ou nome</label>
+                    <input type="text" id="message-input" name="message" placeholder="Ex: João, você é incrível!" maxlength="200" autofocus />
+                </div>
+                <div class="form-group">
+                    <label for="theme-select">Tema</label>
+                    <select id="theme-select" name="theme">
+                        <option value="">🌙 Padrão</option>
+                        <option value="light">☀️ Claro</option>
+                        <option value="warm">🔥 Quente</option>
+                        <option value="elegant">✨ Elegante</option>
+                        <option value="pixel">🎮 Pixel</option>
+                    </select>
+                </div>
+                <button type="submit" class="composer-button">Criar link</button>
+            </form>
+        </div>
+        <div class="celebration" id="celebration">
+            <h1 class="title">__GREETING__, <span id="message">__MESSAGE__</span>__PUNCT__</h1>
+            <p class="subtitle">__SUBTITLE__</p>
+        </div>
         <div class="balloons" id="balloons"></div>
         <canvas id="confetti"></canvas>
         <footer class="footer">
