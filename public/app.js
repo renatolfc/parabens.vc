@@ -52,13 +52,13 @@ if (composerForm) {
 
             if (response.ok) {
                 const data = await response.json();
-                window.location.href = data.short_url;
+                try { await navigator.clipboard.writeText(data.short_url); } catch {}
+                // Pass flash message via hash
+                window.location.href = path + (path.includes("?") ? "&" : "?") + "_flash=link_copied#" + encodeURIComponent(data.short_url);
             } else {
-                // Fallback to direct URL on error
                 window.location.href = path;
             }
         } catch {
-            // Fallback to direct URL on error
             window.location.href = path;
         }
     });
@@ -175,3 +175,24 @@ createBalloons();
 createConfetti();
 drawConfetti();
 trackView();
+
+// Show flash toast if short link was copied
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    if (params.get("_flash") === "link_copied" && hash) {
+        // Clean URL without reloading
+        const clean = window.location.pathname + window.location.search.replace(/[?&]_flash=link_copied/, "");
+        history.replaceState(null, "", clean);
+
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.textContent = "Link copiado: " + hash;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add("toast-visible"));
+        setTimeout(() => {
+            toast.classList.remove("toast-visible");
+            setTimeout(() => toast.remove(), 400);
+        }, 10000);
+    }
+})();
