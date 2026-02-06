@@ -27,6 +27,13 @@ const (
 //go:embed public/index.html public/privacy.html public/styles.css public/app.js public/favicon.svg public/og-image.svg public/og-image.png public/og-template.svg public/blocked-words.txt
 var embeddedFiles embed.FS
 
+var indexTemplate string
+
+func init() {
+	tpl, _ := embeddedFiles.ReadFile("public/index.html")
+	indexTemplate = string(tpl)
+}
+
 type TrackEvent struct {
 	Path           string      `json:"path,omitempty"`
 	UserAgent      string      `json:"user_agent,omitempty"`

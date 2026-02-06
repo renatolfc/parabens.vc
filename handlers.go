@@ -214,7 +214,6 @@ func handlePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveIndex(w http.ResponseWriter, r *http.Request, path string) {
-	tpl, _ := embeddedFiles.ReadFile("public/index.html")
 	_, rawMessage := parseOccasionFromPath(path)
 	message := decodePath(rawMessage)
 	if looksLikePath(message) {
@@ -226,7 +225,8 @@ func serveIndex(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 	theme := r.URL.Query().Get("theme")
-	rendered := renderIndexHTML(string(tpl), path, theme)
+	rendered := renderIndexHTML(indexTemplate, path, theme)
+	w.Header().Set("Cache-Control", "public, max-age=300")
 	writeHTML(w, http.StatusOK, rendered)
 }
 

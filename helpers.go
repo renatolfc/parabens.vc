@@ -137,15 +137,16 @@ func clientIP(r *http.Request) string {
 	return r.RemoteAddr
 }
 
+var htmlEscaper = strings.NewReplacer(
+	"&", "&amp;",
+	"<", "&lt;",
+	">", "&gt;",
+	"\"", "&quot;",
+	"'", "&#39;",
+)
+
 func escapeHTML(value string) string {
-	replacer := strings.NewReplacer(
-		"&", "&amp;",
-		"<", "&lt;",
-		">", "&gt;",
-		"\"", "&quot;",
-		"'", "&#39;",
-	)
-	return replacer.Replace(value)
+	return htmlEscaper.Replace(value)
 }
 
 func escapeXML(value string) string {
