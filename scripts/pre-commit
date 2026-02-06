@@ -1,0 +1,39 @@
+#!/bin/bash
+# Pre-commit hook: format Go files, remove trailing whitespace
+
+set -e
+
+# Get staged files by type
+STAGED_GO=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
+STAGED_WEB=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(css|html|js)$' || true)
+
+# Format Go files with gofmt
+if [ -n "$STAGED_GO" ]; then
+    echo "Formatting Go files..."
+    for file in $STAGED_GO; do
+        if [ -f "$file" ]; then
+            gofmt -w "$file"
+            git add "$file"
+        fi
+    done
+fi
+
+# Remove trailing whitespace from Go, CSS, HTML, JS files
+ALL_FILES="$STAGED_GO $STAGED_WEB"
+if [ -n "$ALL_FILES" ]; then
+    echo "Removing trailing whitespace..."
+    for file in $ALL_FILES; do
+        if [ -f "$file" ]; then
+            sed -i 's/[[:space:]]*$//' "$file"
+            git add "$file"
+        fi
+    done
+fi
+
+# Run go vet on Go files
+if [ -n "$STAGED_GO" ]; then
+    echo "Running go vet..."
+    go vet ./...
+fi
+
+echo "Pre-commit checks passed!"

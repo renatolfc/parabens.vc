@@ -91,6 +91,14 @@ Track events by sending POST requests to `/api/track`. Events are logged to stdo
 
 ## Development
 
+### Setup
+
+Enable the pre-commit hook to auto-format code and remove trailing whitespace:
+
+```bash
+ln -sf ../../scripts/pre-commit .git/hooks/pre-commit
+```
+
 ### Project Structure
 
 - `main.go` - Main server implementation
