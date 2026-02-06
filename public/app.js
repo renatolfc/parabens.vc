@@ -15,6 +15,7 @@ if (composerForm) {
         const occasion = document.getElementById("occasion-select").value;
         const message = document.getElementById("message-input").value.trim();
         const theme = document.getElementById("theme-select").value;
+        const useShortlink = document.getElementById("shortlink-check").checked;
         const button = composerForm.querySelector("button");
         
         if (!message) {
@@ -30,6 +31,12 @@ if (composerForm) {
         }
         if (theme) {
             path += "?theme=" + theme;
+        }
+        
+        // Direct link or shortlink based on checkbox
+        if (!useShortlink) {
+            window.location.href = path;
+            return;
         }
         
         // Create shortlink
