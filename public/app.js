@@ -11,18 +11,18 @@ const balloonColors = ["#fbbf24", "#60a5fa", "#f472b6", "#34d399", "#f97316"];
 if (composerForm) {
     composerForm.addEventListener("submit", async function(e) {
         e.preventDefault();
-        
+
         const occasion = document.getElementById("occasion-select").value;
         const message = document.getElementById("message-input").value.trim();
         const theme = document.getElementById("theme-select").value;
         const useShortlink = document.getElementById("shortlink-check").checked;
         const button = composerForm.querySelector("button");
-        
+
         if (!message) {
             document.getElementById("message-input").focus();
             return;
         }
-        
+
         // Build the full path
         const encodedMessage = message.replace(/ /g, "_");
         let path = "/" + encodedMessage;
@@ -32,24 +32,24 @@ if (composerForm) {
         if (theme) {
             path += "?theme=" + theme;
         }
-        
+
         // Direct link or shortlink based on checkbox
         if (!useShortlink) {
             window.location.href = path;
             return;
         }
-        
+
         // Create shortlink
         button.disabled = true;
         button.textContent = "Criando...";
-        
+
         try {
             const response = await fetch("/s", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ path: path })
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 window.location.href = data.short_url;
