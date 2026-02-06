@@ -1,6 +1,7 @@
 # Binaries
 parabens-vc
 parabens-vc-arm64
+parabensvc
 *.tar
 bin/
 
