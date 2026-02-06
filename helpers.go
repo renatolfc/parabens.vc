@@ -261,11 +261,8 @@ func renderIndexHTML(tpl string, path string, theme string) string {
 		punct = ""
 	}
 
-	// Build title using occasion greeting
-	title := occasion.Greeting + "!"
-	if message != "" {
-		title = fmt.Sprintf("%s, %s%s", occasion.Greeting, message, punct)
-	}
+	// Build title using occasion greeting + display message
+	title := fmt.Sprintf("%s, %s%s", occasion.Greeting, displayMessage, punct)
 
 	// Build OG URL
 	baseURL := publicBaseURL()
@@ -292,7 +289,7 @@ func renderIndexHTML(tpl string, path string, theme string) string {
 	return strings.NewReplacer(
 		"__TITLE__", escapeHTML(title),
 		"__OG_TITLE__", escapeHTML(title),
-		"__OG_DESC__", escapeHTML(message),
+		"__OG_DESC__", escapeHTML(occasion.Subtitle+" "+occasion.Emoji),
 		"__OG_URL__", escapeHTML(ogURL),
 		"__OG_IMAGE__", escapeHTML(ogImage),
 		"__GREETING__", escapeHTML(occasion.Greeting),
